@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Nerve Branch Reveal Animation</title>
+    <!-- We need the Outfit font for the control panel -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+    <div class="interactive-container" id="container">
+        <!-- SVG overlay for drawing the paths and arrows -->
+        <svg class="nerve-svg" viewBox="0 0 1000 1000" id="nerveSvg">
+            <defs>
+                <filter id="pencil" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+                    <feGaussianBlur in="displaced" stdDeviation="0.5" />
+                </filter>
+            </defs>
+            <g id="pathsGroup"></g>
+            <g id="arrowsGroup"></g>
+        </svg>
+
+        <div id="labelsGroup"></div>
+
+        <div class="center-btn" id="mainBtn">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop" alt="Core Node" />
+        </div>
+    </div>
+
+    <!-- Liquid Glass Control Panel -->
+    <div class="control-panel-wrapper">
+        <div class="control-panel">
+            <div class="control-group">
+                <label for="textColor">Text Color</label>
+                <input type="color" id="textColor" value="#e0e4ec">
+            </div>
+            <div class="control-group">
+                <label for="lineColor">Line Color</label>
+                <input type="color" id="lineColor" value="#e0e4ec">
+            </div>
+            <div class="control-group">
+                <label for="highlightColor">Highlight Color</label>
+                <input type="color" id="highlightColor" value="#ffea42">
+            </div>
+            
+            <div class="control-separator"></div>
+
+            <div class="control-group">
+                <label for="lineCount">Lines</label>
+                <input type="range" id="lineCount" min="2" max="12" value="8" style="width: 70px;">
+                <span id="lineCountVal" style="width: 15px; text-align: right;">8</span>
+            </div>
+            <div class="control-group">
+                <label for="lineGap">Gap</label>
+                <input type="range" id="lineGap" min="15" max="90" value="45" style="width: 70px;">
+                <span id="lineGapVal" style="width: 25px; text-align: right;">45°</span>
+            </div>
+            
+            <div class="control-separator"></div>
+
+            <button id="editLabelsBtn" class="action-btn">Edit Text</button>
+            <button id="exportBtn" class="action-btn">Export Code</button>
+        </div>
+    </div>
+
+    <!-- Save Button for Edit Mode -->
+    <button id="saveLabelsBtn" class="top-corner-btn" style="display: none;">Save Labels</button>
+
+    <script src="script.js"></script>
+</body>
+</html>

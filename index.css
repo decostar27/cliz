@@ -1,0 +1,330 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap');
+
+:root {
+    --text-color: #e0e4ec;
+    --highlight-color: #ffea42;
+    --line-color: #e0e4ec;
+}
+
+body {
+    background-color: #0b0c10;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Caveat', cursive;
+    overflow: hidden;
+    background-image: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%);
+}
+
+.interactive-container {
+    position: relative;
+    width: 1000px;
+    height: 1000px;
+}
+
+/* Central Button */
+.center-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 0 0 3px rgba(224, 228, 236, 0.4), 2px 2px 5px rgba(0,0,0,0.5);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    filter: url(#pencil);
+}
+
+.center-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease, filter 0.4s ease;
+    display: block;
+    filter: grayscale(100%) contrast(140%) brightness(0.9);
+}
+
+.center-btn:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+    box-shadow: 0 0 0 4px rgba(224, 228, 236, 0.6), 4px 4px 10px rgba(0,0,0,0.6);
+}
+
+.center-btn:hover img {
+    transform: scale(1.1);
+    filter: grayscale(80%) contrast(120%) brightness(1);
+}
+
+.center-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none;
+    transition: background 0.4s ease;
+}
+
+.interactive-container.active .center-btn {
+    transform: translate(-50%, -50%) scale(0.95);
+    box-shadow: 0 0 0 2px rgba(224, 228, 236, 0.8), 1px 1px 3px rgba(0,0,0,0.8);
+}
+
+/* SVG Overlay */
+.nerve-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Paths */
+.nerve-path {
+    fill: none;
+    stroke: var(--line-color); 
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: var(--path-length, 1000);
+    stroke-dashoffset: var(--path-length, 1000);
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+    opacity: 0.9;
+}
+
+.interactive-container.active .nerve-path {
+    stroke-dashoffset: 0;
+}
+
+/* Arrowheads */
+.arrow-wrapper {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.interactive-container.active .arrow-wrapper {
+    opacity: 1;
+}
+
+.arrow-shape {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    transition: stroke-dashoffset 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.interactive-container.active .arrow-shape {
+    stroke-dashoffset: 0;
+}
+
+/* Labels */
+#labelsGroup {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.nerve-label {
+    position: absolute;
+    color: var(--text-color);
+    font-size: 28px; 
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: transparent;
+    padding: 2px 14px;
+    white-space: nowrap;
+    
+    opacity: 0;
+    transform: var(--base-transform) scale(0.9) rotate(-3deg); 
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease;
+}
+
+.interactive-container.active .nerve-label {
+    opacity: 1;
+    transform: var(--base-transform) scale(1) rotate(0deg);
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Authentic Painted Box Scribble SVG Container */
+.pastel-brush-svg {
+    position: absolute;
+    top: 50%;
+    left: -5%;
+    width: 110%;
+    height: 130%;
+    transform: translateY(-50%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* The actual brush lines */
+.brush-path {
+    stroke: var(--highlight-color);
+    stroke-dasharray: 800;
+    stroke-dashoffset: 800;
+    opacity: 0.95;
+    transition: stroke-dashoffset 0.5s ease-out;
+}
+
+/* Hover activates the drawing animation */
+.nerve-label:hover .brush-path {
+    stroke-dashoffset: 0;
+}
+
+.nerve-label:hover {
+    color: #000000;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Liquid Glass Control Panel Styling */
+.control-panel-wrapper {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px; /* Invisible hit area at the bottom - shrunken so it doesn't block the members node! */
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 40px;
+}
+
+.control-panel-wrapper:hover,
+.control-panel-wrapper:focus-within {
+    height: 150px;
+}
+
+.control-panel {
+    /* Liquid Gloss Background */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    
+    /* Glossy Edge Reflections */
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    
+    padding: 16px 32px;
+    border-radius: 60px;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    
+    /* Floating Shadow and Inner Glow */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.15);
+    font-family: 'Outfit', sans-serif; 
+
+    /* Hidden by default, animated in on hover */
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none; /* Let clicks pass through when hidden */
+}
+
+.control-panel-wrapper:hover .control-panel,
+.control-panel-wrapper:focus-within .control-panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.control-separator {
+    width: 1px;
+    height: 30px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 5px;
+}
+
+.control-panel input[type="range"] {
+    accent-color: var(--highlight-color);
+    cursor: pointer;
+}
+
+.control-panel input[type="color"] {
+    background: none;
+    border: none;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.control-panel input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.control-panel input[type="color"]::-webkit-color-swatch {
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+    color: #000;
+    border: 1px solid rgba(255,255,255,0.8);
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255,255,255,0.2), inset 0 -2px 5px rgba(0,0,0,0.1);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    background: #fff;
+    box-shadow: 0 8px 25px rgba(255,255,255,0.4), inset 0 -2px 5px rgba(0,0,0,0.05);
+}
+
+.top-corner-btn {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    z-index: 200;
+    background: linear-gradient(135deg, rgba(255, 234, 66, 0.9), rgba(255, 200, 0, 0.8));
+    color: #000;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    padding: 14px 32px;
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(255, 234, 66, 0.4), inset 0 -3px 10px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.top-corner-btn:hover {
+    transform: scale(1.05) translateY(-3px);
+    background: linear-gradient(135deg, rgba(255, 255, 100, 1), rgba(255, 220, 0, 1));
+    box-shadow: 0 12px 30px rgba(255, 234, 66, 0.6), inset 0 -3px 10px rgba(0,0,0,0.1);
+}

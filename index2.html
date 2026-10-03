@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nerve Branch Reveal Animation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Outfit:wght@500;600;700;800&display=swap');
+
+:root {
+    --text-color: #000000;
+    --line-color: #000000;
+    --highlight-color: #ffea42;
+    --bg-color-1: #1a1a00;
+    --bg-color-2: #000000;
+}
+
+body {
+    background: radial-gradient(circle at center, var(--highlight-color) 0%, var(--bg-color-1) 80%, var(--bg-color-2) 100%);
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Caveat', cursive;
+    overflow: hidden;
+    transition: background 0.4s ease;
+}
+
+/* Base Responsive Container */
+.interactive-container { 
+    position: relative; 
+    width: 100vmin;
+    height: 100vmin;
+    max-width: 1000px;
+    max-height: 1000px;
+    container-type: inline-size;
+}
+
+/* Center Button Generic */
+.center-btn {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: clamp(60px, 12cqi, 120px); 
+    height: clamp(60px, 12cqi, 120px); 
+    border-radius: 50%; cursor: pointer; z-index: 10;
+    display: flex; justify-content: center; align-items: center;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.center-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: clamp(10px, 1.6cqi, 16px);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--highlight-color);
+}
+.center-image {
+    width: 100%; height: 100%; object-fit: cover;
+    filter: grayscale(100%) contrast(140%) brightness(0.9);
+    transition: transform 0.6s ease, filter 0.4s ease;
+}
+
+/* Style: Venom */
+.interactive-container.style-venom .center-btn {
+    background: var(--line-color);
+    box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.1);
+}
+.interactive-container.style-venom .center-btn:hover { 
+    transform: translate(-50%, -50%) scale(1.1); 
+    box-shadow: 0 0 40px rgba(0,0,0,1), inset 0 0 30px rgba(255,255,255,0.2); 
+}
+.interactive-container.style-venom.active .center-btn { transform: translate(-50%, -50%) scale(0.9); }
+.interactive-container.style-venom .center-image { display: none; }
+
+/* Style: Arrow */
+.interactive-container.style-arrow .center-btn {
+    box-shadow: 0 0 0 3px var(--line-color), 2px 2px 5px rgba(0,0,0,0.5);
+    background: transparent;
+    overflow: hidden; filter: url(#pencil);
+}
+.interactive-container.style-arrow .center-btn::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%); pointer-events: none;
+}
+.interactive-container.style-arrow .center-btn:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+    box-shadow: 0 0 0 4px var(--line-color), 4px 4px 10px rgba(0,0,0,0.6);
+}
+.interactive-container.style-arrow .center-btn:hover .center-image {
+    transform: scale(1.1); filter: grayscale(80%) contrast(120%) brightness(1);
+}
+.interactive-container.style-arrow.active .center-btn {
+    transform: translate(-50%, -50%) scale(0.95);
+    box-shadow: 0 0 0 2px var(--line-color), 1px 1px 3px rgba(0,0,0,0.8);
+}
+.interactive-container.style-arrow .center-text { display: none; }
+
+
+.nerve-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: visible; }
+
+/* Venom Path */
+.venom-path {
+    fill: none;
+    stroke: var(--line-color);
+    stroke-linecap: round; stroke-linejoin: miter; stroke-miterlimit: 10;
+    stroke-dasharray: var(--path-length, 1000px) 10000px; 
+    stroke-dashoffset: calc(var(--path-length, 1000px) + 10px);
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.interactive-container.active .venom-path { stroke-dashoffset: 0; }
+
+/* Arrow Path */
+.arrow-path {
+    fill: none; stroke: var(--line-color); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: var(--path-length, 1000); stroke-dashoffset: var(--path-length, 1000);
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.65, 0, 0.35, 1); opacity: 0.9;
+}
+.interactive-container.active .arrow-path { stroke-dashoffset: 0; }
+.arrow-wrapper { transition: opacity 0.3s ease; opacity: 0; }
+.interactive-container.active .arrow-wrapper { opacity: 1; }
+.arrow-shape { stroke-dasharray: 40; stroke-dashoffset: 40; transition: stroke-dashoffset 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.interactive-container.active .arrow-shape { stroke-dashoffset: 0; }
+
+#labelsGroup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+
+/* Link Labels */
+.nerve-label {
+    position: absolute; 
+    color: var(--text-color); 
+    font-size: clamp(14px, 3.2cqi, 38px);
+    font-weight: 700; 
+    letter-spacing: 2px;
+    text-decoration: none; 
+    white-space: nowrap; 
+    opacity: 0;
+    transform: var(--base-transform) scale(0.5);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
+}
+.interactive-container.active .nerve-label {
+    opacity: 1; transform: var(--base-transform) scale(1); pointer-events: auto; cursor: pointer;
+}
+
+/* Venom Label Hover */
+.nerve-label.venom-label-style:hover {
+    color: #ffffff;
+    text-shadow: 0 0 15px rgba(255,255,255,0.9), 0 0 30px var(--highlight-color);
+}
+
+/* Arrow Label Hover */
+.nerve-label.arrow-label-style {
+    padding: 2px 14px;
+    background: transparent;
+    transform: var(--base-transform) scale(0.9) rotate(-3deg); 
+}
+.interactive-container.active .nerve-label.arrow-label-style {
+    transform: var(--base-transform) scale(1) rotate(0deg);
+}
+.nerve-label.arrow-label-style:hover {
+    color: #000000;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.pastel-brush-svg {
+    position: absolute; top: 50%; left: -5%; width: 110%; height: 130%; 
+    transform: translateY(-50%); z-index: -1; pointer-events: none;
+}
+.brush-path {
+    stroke: var(--highlight-color); stroke-dasharray: 800; stroke-dashoffset: 800; 
+    opacity: 0.95; transition: stroke-dashoffset 0.5s ease-out;
+}
+.nerve-label:hover .brush-path { stroke-dashoffset: 0; }
+
+/* Control Panel UI */
+.control-panel-wrapper {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 30px; z-index: 100;
+    display: flex; justify-content: center; align-items: flex-end; padding-bottom: 40px;
+}
+.control-panel-wrapper:hover, .control-panel-wrapper:focus-within { height: 150px; }
+
+.control-panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
+    backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+    border-top: 1px solid rgba(255, 255, 255, 0.4); border-left: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px 32px; border-radius: 60px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; justify-content: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.15);
+    font-family: 'Outfit', sans-serif; opacity: 0; transform: translateY(30px);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;
+    max-width: 90vw;
+}
+@media (max-width: 800px) {
+    .control-panel { border-radius: 20px; padding: 12px 16px; gap: 12px; }
+    .control-panel-wrapper:hover, .control-panel-wrapper:focus-within { height: auto; }
+}
+
+.control-panel-wrapper:hover .control-panel, .control-panel-wrapper:focus-within .control-panel { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.control-group { display: flex; align-items: center; gap: 8px; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+.control-separator { width: 1px; height: 30px; background: rgba(255,255,255,0.2); margin: 0 5px; }
+@media (max-width: 800px) {
+    .control-separator { display: none; }
+}
+
+.style-select {
+    background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3); color: #fff;
+    padding: 6px 12px; border-radius: 8px; font-family: 'Outfit', sans-serif;
+    outline: none; cursor: pointer; font-size: 14px; font-weight: 500;
+}
+.style-select option { background: #111; color: #fff; }
+
+.control-panel input[type="range"] { accent-color: var(--highlight-color); cursor: pointer; width: 60px; }
+.control-panel input[type="color"] {
+    background: none; border: none; padding: 0; width: 28px; height: 28px;
+    border-radius: 50%; cursor: pointer; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.control-panel input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.control-panel input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; }
+
+.action-btn {
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7)); color: #000;
+    border: 1px solid rgba(255,255,255,0.8); padding: 10px 18px; border-radius: 40px; font-size: 13px;
+    font-weight: 700; font-family: 'Outfit', sans-serif; cursor: pointer; transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255,255,255,0.2), inset 0 -2px 5px rgba(0,0,0,0.1);
+}
+.action-btn:hover { transform: translateY(-2px); background: #fff; box-shadow: 0 8px 25px rgba(255,255,255,0.4), inset 0 -2px 5px rgba(0,0,0,0.05); }
+
+.top-corner-btn {
+    position: absolute; top: 30px; right: 30px; z-index: 200;
+    background: linear-gradient(135deg, rgba(255, 234, 66, 0.9), rgba(255, 200, 0, 0.8)); color: #000;
+    border: 2px solid rgba(255, 255, 255, 0.8); padding: 14px 32px; border-radius: 40px;
+    font-size: 16px; font-weight: 800; font-family: 'Outfit', sans-serif; cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(255, 234, 66, 0.4), inset 0 -3px 10px rgba(0,0,0,0.2); backdrop-filter: blur(10px);
+}
+.top-corner-btn:hover { transform: scale(1.05) translateY(-3px); background: linear-gradient(135deg, rgba(255, 255, 100, 1), rgba(255, 220, 0, 1)); box-shadow: 0 12px 30px rgba(255, 234, 66, 0.6), inset 0 -3px 10px rgba(0,0,0,0.1); }
+
+/* Custom Liquid Glass Cursor */
+body, a, button, select, input, .center-btn, [contenteditable="true"] {
+    cursor: none !important;
+}
+
+.liquid-cursor-wrapper {
+    position: fixed; top: 0; left: 0; width: 32px; height: 32px;
+    pointer-events: none; z-index: 10000;
+    transform-origin: 4px 2px;
+    transform: translate(-4px, -2px);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+    transition: transform 0.15s ease-out;
+}
+
+.liquid-cursor-glass {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 100%);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 4 2 L 4 22 L 9.5 16.5 L 13.5 24 L 17 22 L 13 15 L 20 15 Z' fill='black' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 4 2 L 4 22 L 9.5 16.5 L 13.5 24 L 17 22 L 13 15 L 20 15 Z' fill='black' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain; mask-size: contain;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    transition: background 0.3s;
+}
+
+.liquid-cursor-stroke {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    overflow: visible;
+}
+
+.liquid-cursor-stroke path {
+    fill: none; stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.5; stroke-linejoin: round;
+    transition: stroke 0.3s;
+}
+
+.liquid-cursor-wrapper.hovering {
+    transform: translate(-4px, -2px) scale(1.15);
+}
+.liquid-cursor-wrapper.hovering .liquid-cursor-glass {
+    opacity: 0.8;
+}
+
+.liquid-cursor-wrapper.text-mode {
+    transform: translate(-4px, -2px) scale(0.8);
+    opacity: 0.5;
+}
+</style>
+</head>
+<body>
+
+<div class="interactive-container style-venom" id="container">
+    <svg class="nerve-svg" viewBox="0 0 1000 1000" id="nerveSvg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <filter id="pencil" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+                <feGaussianBlur in="displaced" stdDeviation="0.5" />
+            </filter>
+        </defs>
+        <g id="pathsGroup"></g>
+        <g id="arrowsGroup"></g>
+    </svg>
+    <div id="labelsGroup"></div>
+    <div class="center-btn" id="mainBtn">
+        <span class="center-text">GROW</span>
+        <img class="center-image" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop" alt="Core Node" />
+    </div>
+</div>
+
+<div class="control-panel-wrapper">
+    <div class="control-panel">
+        <div class="control-group">
+            <select id="styleSelect" class="style-select">
+                <option value="venom" selected>Venom</option>
+                <option value="arrow">Arrow Headed</option>
+            </select>
+        </div>
+        <div class="control-separator"></div>
+        <div class="control-group"><label>Text</label><input type="color" id="textColor" value="#000000"></div>
+        <div class="control-group"><label>Nerves</label><input type="color" id="lineColor" value="#000000"></div>
+        <div class="control-group"><label>Glow</label><input type="color" id="highlightColor" value="#ffea42"></div>
+        <div class="control-separator"></div>
+        <div class="control-group"><label>Roots</label><input type="range" id="lineCount" min="3" max="15" value="8"><span id="lineCountVal" style="width: 15px; display:inline-block; text-align:right;">8</span></div>
+        <div class="control-group"><label>Sweep</label><input type="range" id="lineSweep" min="90" max="360" value="360"><span id="lineSweepVal" style="width: 35px; display:inline-block; text-align:right;">360°</span></div>
+        <div class="control-separator"></div>
+        <button id="editLabelsBtn" class="action-btn">Edit Links</button>
+        <button id="exportBtn" class="action-btn">Export Code</button>
+    </div>
+</div>
+
+<button id="saveLabelsBtn" class="top-corner-btn" style="display: none;">Save Links</button>
+
+<script>
+let allLabels = ['Discord', 'Twitter', 'GitHub', 'Portfolio', 'About Me', 'Store', 'Contact', 'Blog', 'News', 'Events'];
+
+const pathsGroup = document.getElementById('pathsGroup');
+const arrowsGroup = document.getElementById('arrowsGroup');
+const labelsGroup = document.getElementById('labelsGroup');
+const container = document.getElementById('container');
+const mainBtn = document.getElementById('mainBtn');
+
+function createJaggedPath(sx, sy, angle, length, thickness) {
+    const ex = sx + Math.cos(angle) * length;
+    const ey = sy + Math.sin(angle) * length;
+    
+    const segments = Math.floor(length / 15) + 3;
+    let pathStr = `M ${sx} ${sy}`;
+    
+    const perpAngle = angle + Math.PI / 2;
+    
+    for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const bx = sx + (ex - sx) * t;
+        const by = sy + (ey - sy) * t;
+        
+        if (i === segments) {
+            pathStr += ` L ${ex} ${ey}`;
+        } else {
+            const jitterAmount = (Math.random() - 0.5) * (length * 0.15);
+            const jx = bx + Math.cos(perpAngle) * jitterAmount;
+            const jy = by + Math.sin(perpAngle) * jitterAmount;
+            pathStr += ` L ${jx} ${jy}`;
+        }
+    }
+    
+    const node = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    node.setAttribute('d', pathStr);
+    node.setAttribute('class', 'venom-path');
+    node.style.strokeWidth = `${thickness}px`;
+    return node;
+}
+
+function renderNerves() {
+    const count = parseInt(document.getElementById('lineCount').value);
+    const sweep = parseInt(document.getElementById('lineSweep').value);
+    const style = document.getElementById('styleSelect').value;
+    
+    document.getElementById('lineCountVal').textContent = count;
+    document.getElementById('lineSweepVal').textContent = sweep + '°';
+    
+    pathsGroup.innerHTML = '';
+    arrowsGroup.innerHTML = '';
+    labelsGroup.innerHTML = '';
+    
+    let gap, startAngle;
+    if (sweep === 360) {
+        gap = 360 / count;
+        startAngle = -90; // Start perfectly at the top
+    } else {
+        gap = sweep / (count - 1);
+        startAngle = -90 - (sweep / 2);
+    }
+
+    for (let i = 0; i < count; i++) {
+        const angleDeg = startAngle + (i * gap);
+        const angleRad = angleDeg * Math.PI / 180;
+        
+        if (style === 'venom') {
+            const length = 220 + Math.random() * 80;
+            const thickness = 8;
+            const startR = 45; 
+            const sx = 500 + Math.cos(angleRad) * startR;
+            const sy = 500 + Math.sin(angleRad) * startR;
+            
+            const mainPath = createJaggedPath(sx, sy, angleRad, length, thickness);
+            pathsGroup.appendChild(mainPath);
+            
+            const pathLen = mainPath.getTotalLength() || 300;
+            mainPath.style.setProperty('--path-length', pathLen + 'px');
+            mainPath.style.transitionDelay = `${0.05 * i}s`;
+            
+            const numSplits = Math.floor(Math.random() * 3) + 2;
+            for (let j = 0; j < numSplits; j++) {
+                const t = 0.4 + (Math.random() * 0.5);
+                const pt = mainPath.getPointAtLength(pathLen * t);
+                const ptPrev = mainPath.getPointAtLength(Math.max(0, pathLen * t - 2));
+                const tangent = Math.atan2(pt.y - ptPrev.y, pt.x - ptPrev.x);
+                const splitAngle = tangent + (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.6); 
+                const subLen = length * (0.3 + Math.random() * 0.3);
+                const subThick = thickness * (0.4 + Math.random() * 0.3);
+                
+                const subPath = createJaggedPath(pt.x, pt.y, splitAngle, subLen, subThick);
+                pathsGroup.appendChild(subPath);
+                
+                const subPathLen = subPath.getTotalLength() || 150;
+                subPath.style.setProperty('--path-length', subPathLen + 'px');
+                subPath.style.transitionDelay = `${(0.05 * i) + (t * 0.4)}s`;
+                
+                if (Math.random() > 0.4) {
+                    const t2 = 0.5 + Math.random() * 0.4;
+                    const pt2 = subPath.getPointAtLength(subPathLen * t2);
+                    const ptPrev2 = subPath.getPointAtLength(Math.max(0, subPathLen * t2 - 2));
+                    const tangent2 = Math.atan2(pt2.y - ptPrev2.y, pt2.x - ptPrev2.x);
+                    const splitAngle2 = tangent2 + (Math.random() > 0.5 ? 1 : -1) * 0.6;
+                    
+                    const tinyPath = createJaggedPath(pt2.x, pt2.y, splitAngle2, subLen * 0.5, subThick * 0.5);
+                    pathsGroup.appendChild(tinyPath);
+                    tinyPath.style.setProperty('--path-length', (tinyPath.getTotalLength() || 50) + 'px');
+                    tinyPath.style.transitionDelay = `${(0.05 * i) + (t * 0.4) + (t2 * 0.3)}s`;
+                }
+            }
+
+            const endPt = mainPath.getPointAtLength(pathLen);
+            const preEndPt = mainPath.getPointAtLength(Math.max(0, pathLen - 2)); 
+            const endAngle = Math.atan2(endPt.y - preEndPt.y, endPt.x - preEndPt.x);
+            
+            createLabel(i, endPt, endAngle, style, 20);
+
+        } else if (style === 'arrow') {
+            const startR = 65; 
+            const endR = 250 + (Math.random() * 50); 
+            
+            const sx = 500 + Math.cos(angleRad) * startR;
+            const sy = 500 + Math.sin(angleRad) * startR;
+            const ex = 500 + Math.cos(angleRad) * endR;
+            const ey = 500 + Math.sin(angleRad) * endR;
+            
+            const curveOffset = (Math.random() - 0.5) * 80; 
+            const c1Angle = angleRad + (curveOffset / 200);
+            const c1R = startR + (endR - startR) * 0.3;
+            const cx1 = 500 + Math.cos(c1Angle) * c1R;
+            const cy1 = 500 + Math.sin(c1Angle) * c1R;
+            
+            const c2Angle = angleRad - (curveOffset / 200);
+            const c2R = startR + (endR - startR) * 0.7;
+            const cx2 = 500 + Math.cos(c2Angle) * c2R;
+            const cy2 = 500 + Math.sin(c2Angle) * c2R;
+            
+            const pathStr = `M ${sx} ${sy} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${ex} ${ey}`;
+            
+            const pathNode = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            pathNode.setAttribute('d', pathStr);
+            pathNode.setAttribute('class', 'arrow-path');
+            pathNode.setAttribute('filter', 'url(#pencil)'); 
+            pathsGroup.appendChild(pathNode);
+
+            const len = pathNode.getTotalLength() || 300;
+            pathNode.style.setProperty('--path-length', len);
+
+            const endPt = pathNode.getPointAtLength(len);
+            const preEndPt = pathNode.getPointAtLength(Math.max(0, len - 2)); 
+            const arrowAngle = Math.atan2(endPt.y - preEndPt.y, endPt.x - preEndPt.x) * 180 / Math.PI;
+
+            const arrowGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            arrowGroup.setAttribute('transform', `translate(${endPt.x}, ${endPt.y}) rotate(${arrowAngle})`);
+            arrowGroup.setAttribute('class', 'arrow-wrapper');
+            const arrowShape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            arrowShape.setAttribute('d', 'M -12 -8 L 0 0 L -12 8');
+            arrowShape.setAttribute('class', 'arrow-shape arrow-path'); 
+            arrowShape.setAttribute('fill', 'none');
+            arrowShape.setAttribute('filter', 'url(#pencil)');
+            arrowGroup.appendChild(arrowShape);
+            arrowsGroup.appendChild(arrowGroup);
+
+            pathNode.style.transitionDelay = `${i * 0.05}s`;
+            arrowGroup.style.transitionDelay = `${i * 0.05 + 0.6}s`; 
+
+            createLabel(i, endPt, arrowAngle * Math.PI / 180, style, 30);
+        }
+    }
+}
+
+function createLabel(i, endPt, angleRad, style, pad) {
+    const labelLink = document.createElement('a');
+    labelLink.href = '#';
+    labelLink.className = 'nerve-label ' + (style === 'arrow' ? 'arrow-label-style' : 'venom-label-style');
+    
+    const textSpan = document.createElement('span');
+    textSpan.className = 'label-text';
+    textSpan.textContent = allLabels[i % allLabels.length];
+    labelLink.appendChild(textSpan);
+    
+    const px = endPt.x + Math.cos(angleRad) * pad;
+    const py = endPt.y + Math.sin(angleRad) * pad;
+    
+    // Scale positioning by mapping 0-1000px to 0-100%
+    labelLink.style.left = `${(px / 10)}%`;
+    labelLink.style.top = `${(py / 10)}%`;
+    
+    const tx = (Math.cos(angleRad) - 1) * 50; 
+    const ty = (Math.sin(angleRad) - 1) * 50;
+    labelLink.style.setProperty('--base-transform', `translate(${tx}%, ${ty}%)`);
+    
+    const ox = (1 - Math.cos(angleRad)) * 50; 
+    const oy = (1 - Math.sin(angleRad)) * 50; 
+    labelLink.style.transformOrigin = `${ox}% ${oy}%`;
+    
+    labelLink.style.transitionDelay = style === 'venom' ? `${(0.05 * i) + 0.6}s` : `${(0.05 * i) + 0.7}s`;
+
+    if (style === 'arrow') {
+        const brushSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        brushSvg.setAttribute('class', 'pastel-brush-svg');
+        brushSvg.setAttribute('viewBox', '0 0 100 40');
+        brushSvg.setAttribute('preserveAspectRatio', 'none');
+        const brushPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        brushPath.setAttribute('d', 'M 5,6 L 95,8 L 3,16 L 98,16 L 4,24 L 97,26 L 5,34 L 94,32');
+        brushPath.setAttribute('stroke-width', '9');
+        brushPath.setAttribute('stroke-linecap', 'round');
+        brushPath.setAttribute('stroke-linejoin', 'round');
+        brushPath.setAttribute('fill', 'none');
+        brushPath.setAttribute('class', 'brush-path');
+        brushPath.setAttribute('filter', 'url(#pencil)');
+        brushSvg.appendChild(brushPath);
+        labelLink.appendChild(brushSvg);
+    }
+    
+    labelsGroup.appendChild(labelLink);
+}
+
+renderNerves();
+
+mainBtn.addEventListener('click', () => { container.classList.toggle('active'); });
+
+function updateThemeBackground(color) {
+    const style = document.getElementById('styleSelect').value;
+    if (style === 'venom') {
+        document.body.style.background = `radial-gradient(circle at center, ${color} 0%, #1a1a00 80%, #000 100%)`;
+    } else {
+        document.body.style.background = `radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 60%), #0b0c10`;
+    }
+}
+
+// Control Panel Logic
+document.getElementById('textColor').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--text-color', e.target.value);
+});
+document.getElementById('lineColor').addEventListener('input', (e) => {
+    document.documentElement.style.setProperty('--line-color', e.target.value);
+});
+document.getElementById('highlightColor').addEventListener('input', (e) => {
+    const color = e.target.value;
+    document.documentElement.style.setProperty('--highlight-color', color);
+    updateThemeBackground(color);
+});
+
+document.getElementById('styleSelect').addEventListener('change', (e) => {
+    const style = e.target.value;
+    const options = e.target.options;
+    for (let i = 0; i < options.length; i++) {
+        if (options[i].value === style) {
+            options[i].setAttribute('selected', 'selected');
+        } else {
+            options[i].removeAttribute('selected');
+        }
+    }
+    container.className = `interactive-container style-${style}`;
+    
+    // Set default colors based on style
+    if (style === 'venom') {
+        document.documentElement.style.setProperty('--text-color', '#000000');
+        document.documentElement.style.setProperty('--line-color', '#000000');
+        document.getElementById('textColor').value = '#000000';
+        document.getElementById('lineColor').value = '#000000';
+    } else {
+        document.documentElement.style.setProperty('--text-color', '#e0e4ec');
+        document.documentElement.style.setProperty('--line-color', '#e0e4ec');
+        document.getElementById('textColor').value = '#e0e4ec';
+        document.getElementById('lineColor').value = '#e0e4ec';
+    }
+    
+    updateThemeBackground(document.getElementById('highlightColor').value);
+    container.classList.remove('active'); 
+    renderNerves();
+});
+
+document.getElementById('lineCount').addEventListener('input', () => { container.classList.remove('active'); renderNerves(); });
+document.getElementById('lineSweep').addEventListener('input', () => { container.classList.remove('active'); renderNerves(); });
+
+// Track input values for exporting
+document.querySelectorAll('.control-panel input').forEach(input => {
+    input.addEventListener('change', (e) => {
+        e.target.setAttribute('value', e.target.value);
+    });
+});
+
+// Edit/Save Logic
+document.getElementById('editLabelsBtn').addEventListener('click', () => {
+    container.classList.add('active');
+    document.querySelectorAll('.label-text').forEach(span => {
+        span.setAttribute('contenteditable', 'true');
+        span.style.borderBottom = '2px dashed rgba(255,255,255,0.5)';
+        span.style.outline = 'none';
+        span.style.cursor = 'text';
+    });
+    document.getElementById('saveLabelsBtn').style.display = 'block';
+});
+document.getElementById('saveLabelsBtn').addEventListener('click', () => {
+    document.querySelectorAll('.label-text').forEach((span, i) => {
+        allLabels[i] = span.textContent.trim();
+        span.removeAttribute('contenteditable');
+        span.style.borderBottom = 'none';
+        span.style.cursor = 'pointer';
+    });
+    document.getElementById('saveLabelsBtn').style.display = 'none';
+});
+
+// Export Logic
+document.getElementById('exportBtn').addEventListener('click', () => {
+    // Before export, capture outer HTML
+    const fullCode = document.documentElement.outerHTML;
+    const blob = new Blob(['<!DOCTYPE html>\n' + fullCode], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nerve_menu_export.html';
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+// Liquid Glass Custom Cursor Logic
+if (!document.querySelector('.liquid-cursor-wrapper')) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'liquid-cursor-wrapper';
+    wrapper.innerHTML = `
+        <div class="liquid-cursor-glass"></div>
+        <svg class="liquid-cursor-stroke" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 4 2 L 4 22 L 9.5 16.5 L 13.5 24 L 17 22 L 13 15 L 20 15 Z"></path>
+        </svg>
+    `;
+    document.body.appendChild(wrapper);
+}
+const customCursor = document.querySelector('.liquid-cursor-wrapper');
+
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
+
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    customCursor.style.left = `${mouseX}px`;
+    customCursor.style.top = `${mouseY}px`;
+});
+
+document.body.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('a, button, select, input, .center-btn, .label-text, [contenteditable="true"]');
+    if (el) {
+        if ((el.tagName === 'INPUT' && el.type === 'text') || el.isContentEditable || (el.classList.contains('label-text') && el.getAttribute('contenteditable') === 'true')) {
+            customCursor.classList.add('text-mode');
+        } else {
+            customCursor.classList.add('hovering');
+        }
+    }
+});
+document.body.addEventListener('mouseout', (e) => {
+    const el = e.target.closest('a, button, select, input, .center-btn, .label-text, [contenteditable="true"]');
+    if (el) {
+        customCursor.classList.remove('hovering', 'text-mode');
+    }
+});
+</script>
+</body>
+</html>
