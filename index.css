@@ -123,6 +123,25 @@ body {
     stroke-dashoffset: 0;
 }
 
+/* Editing State (Static Display) */
+.interactive-container.is-editing .nerve-path,
+.interactive-container.is-editing .arrow-shape,
+.interactive-container.is-editing .arrow-wrapper,
+.interactive-container.is-editing .nerve-label {
+    transition: none !important;
+}
+.interactive-container.is-editing .nerve-path,
+.interactive-container.is-editing .arrow-shape {
+    stroke-dashoffset: 0;
+}
+.interactive-container.is-editing .arrow-wrapper,
+.interactive-container.is-editing .nerve-label {
+    opacity: 1;
+}
+.interactive-container.is-editing .nerve-label {
+    transform: var(--base-transform) scale(1) rotate(0deg);
+}
+
 /* Labels */
 #labelsGroup {
     position: absolute;

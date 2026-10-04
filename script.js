@@ -179,12 +179,25 @@ document.getElementById('highlightColor').addEventListener('input', (e) => {
     });
 });
 document.getElementById('lineCount').addEventListener('input', () => {
-    container.classList.remove('active'); // Close menu while editing structure
+    container.classList.add('is-editing');
+    container.classList.remove('active');
     renderBranches();
 });
 document.getElementById('lineGap').addEventListener('input', () => {
+    container.classList.add('is-editing');
     container.classList.remove('active');
     renderBranches();
+});
+
+document.getElementById('lineCount').addEventListener('change', () => {
+    container.classList.remove('is-editing');
+    void container.offsetWidth; // Force reflow
+    container.classList.add('active');
+});
+document.getElementById('lineGap').addEventListener('change', () => {
+    container.classList.remove('is-editing');
+    void container.offsetWidth; // Force reflow
+    container.classList.add('active');
 });
 
 // Export Logic
@@ -253,6 +266,25 @@ body {
 .interactive-container.active .arrow-wrapper { opacity: 1; }
 .arrow-shape { stroke-dasharray: 40; stroke-dashoffset: 40; transition: stroke-dashoffset 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .interactive-container.active .arrow-shape { stroke-dashoffset: 0; }
+
+/* Editing State (Static Display) */
+.interactive-container.is-editing .nerve-path,
+.interactive-container.is-editing .arrow-shape,
+.interactive-container.is-editing .arrow-wrapper,
+.interactive-container.is-editing .nerve-label {
+    transition: none !important;
+}
+.interactive-container.is-editing .nerve-path,
+.interactive-container.is-editing .arrow-shape {
+    stroke-dashoffset: 0;
+}
+.interactive-container.is-editing .arrow-wrapper,
+.interactive-container.is-editing .nerve-label {
+    opacity: 1;
+}
+.interactive-container.is-editing .nerve-label {
+    transform: var(--base-transform) scale(1) rotate(0deg);
+}
 
 #labelsGroup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 

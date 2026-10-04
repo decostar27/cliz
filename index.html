@@ -122,6 +122,30 @@ body {
 .arrow-shape { stroke-dasharray: 40; stroke-dashoffset: 40; transition: stroke-dashoffset 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .interactive-container.active .arrow-shape { stroke-dashoffset: 0; }
 
+/* Editing State (Static Display) */
+.interactive-container.is-editing .venom-path,
+.interactive-container.is-editing .arrow-path,
+.interactive-container.is-editing .arrow-shape,
+.interactive-container.is-editing .arrow-wrapper,
+.interactive-container.is-editing .nerve-label {
+    transition: none !important;
+}
+.interactive-container.is-editing .venom-path,
+.interactive-container.is-editing .arrow-path,
+.interactive-container.is-editing .arrow-shape {
+    stroke-dashoffset: 0;
+}
+.interactive-container.is-editing .arrow-wrapper,
+.interactive-container.is-editing .nerve-label {
+    opacity: 1;
+}
+.interactive-container.is-editing .nerve-label {
+    transform: var(--base-transform) scale(1);
+}
+.interactive-container.is-editing .nerve-label.arrow-label-style {
+    transform: var(--base-transform) scale(1) rotate(0deg);
+}
+
 #labelsGroup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
 
 /* Link Labels */
@@ -235,52 +259,7 @@ body {
 }
 .top-corner-btn:hover { transform: scale(1.05) translateY(-3px); background: linear-gradient(135deg, rgba(255, 255, 100, 1), rgba(255, 220, 0, 1)); box-shadow: 0 12px 30px rgba(255, 234, 66, 0.6), inset 0 -3px 10px rgba(0,0,0,0.1); }
 
-/* Custom Liquid Glass Cursor */
-body, a, button, select, input, .center-btn, [contenteditable="true"] {
-    cursor: none !important;
-}
 
-.liquid-cursor-wrapper {
-    position: fixed; top: 0; left: 0; width: 32px; height: 32px;
-    pointer-events: none; z-index: 10000;
-    transform-origin: 4px 2px;
-    transform: translate(-4px, -2px);
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
-    transition: transform 0.15s ease-out;
-}
-
-.liquid-cursor-glass {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 100%);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 4 2 L 4 22 L 9.5 16.5 L 13.5 24 L 17 22 L 13 15 L 20 15 Z' fill='black' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
-    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 4 2 L 4 22 L 9.5 16.5 L 13.5 24 L 17 22 L 13 15 L 20 15 Z' fill='black' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
-    -webkit-mask-size: contain; mask-size: contain;
-    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-    transition: background 0.3s;
-}
-
-.liquid-cursor-stroke {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    overflow: visible;
-}
-
-.liquid-cursor-stroke path {
-    fill: none; stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.5; stroke-linejoin: round;
-    transition: stroke 0.3s;
-}
-
-.liquid-cursor-wrapper.hovering {
-    transform: translate(-4px, -2px) scale(1.15);
-}
-.liquid-cursor-wrapper.hovering .liquid-cursor-glass {
-    opacity: 0.8;
-}
-
-.liquid-cursor-wrapper.text-mode {
-    transform: translate(-4px, -2px) scale(0.8);
-    opacity: 0.5;
-}
 </style>
 </head>
 <body>
@@ -600,8 +579,27 @@ document.getElementById('styleSelect').addEventListener('change', (e) => {
     renderNerves();
 });
 
-document.getElementById('lineCount').addEventListener('input', () => { container.classList.remove('active'); renderNerves(); });
-document.getElementById('lineSweep').addEventListener('input', () => { container.classList.remove('active'); renderNerves(); });
+document.getElementById('lineCount').addEventListener('input', () => { 
+    container.classList.add('is-editing');
+    container.classList.remove('active');
+    renderNerves(); 
+});
+document.getElementById('lineSweep').addEventListener('input', () => { 
+    container.classList.add('is-editing');
+    container.classList.remove('active');
+    renderNerves(); 
+});
+
+document.getElementById('lineCount').addEventListener('change', () => {
+    container.classList.remove('is-editing');
+    void container.offsetWidth; // Force reflow
+    container.classList.add('active');
+});
+document.getElementById('lineSweep').addEventListener('change', () => {
+    container.classList.remove('is-editing');
+    void container.offsetWidth; // Force reflow
+    container.classList.add('active');
+});
 
 // Track input values for exporting
 document.querySelectorAll('.control-panel input').forEach(input => {
@@ -644,46 +642,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     URL.revokeObjectURL(url);
 });
 
-// Liquid Glass Custom Cursor Logic
-if (!document.querySelector('.liquid-cursor-wrapper')) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'liquid-cursor-wrapper';
-    wrapper.innerHTML = `
-        <div class="liquid-cursor-glass"></div>
-        <svg class="liquid-cursor-stroke" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 4 2 L 4 22 L 9.5 16.5 L 13.5 24 L 17 22 L 13 15 L 20 15 Z"></path>
-        </svg>
-    `;
-    document.body.appendChild(wrapper);
-}
-const customCursor = document.querySelector('.liquid-cursor-wrapper');
 
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
-
-document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    customCursor.style.left = `${mouseX}px`;
-    customCursor.style.top = `${mouseY}px`;
-});
-
-document.body.addEventListener('mouseover', (e) => {
-    const el = e.target.closest('a, button, select, input, .center-btn, .label-text, [contenteditable="true"]');
-    if (el) {
-        if ((el.tagName === 'INPUT' && el.type === 'text') || el.isContentEditable || (el.classList.contains('label-text') && el.getAttribute('contenteditable') === 'true')) {
-            customCursor.classList.add('text-mode');
-        } else {
-            customCursor.classList.add('hovering');
-        }
-    }
-});
-document.body.addEventListener('mouseout', (e) => {
-    const el = e.target.closest('a, button, select, input, .center-btn, .label-text, [contenteditable="true"]');
-    if (el) {
-        customCursor.classList.remove('hovering', 'text-mode');
-    }
-});
 </script>
 </body>
 </html>
